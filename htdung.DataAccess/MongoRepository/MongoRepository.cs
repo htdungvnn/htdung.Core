@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace htdung.DataAccess.MongoRepository
 {
     public class MongoRepository<T> : IMongoRepository<T>
-        where T: class
+        where T : BaseActionLog<BaseEntity>
     {
         private readonly IMongoCollection<T> _collection;
 
@@ -26,36 +26,50 @@ namespace htdung.DataAccess.MongoRepository
             await _collection.InsertOneAsync(action);
         }
 
-        public Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id)
         {
-            var filter = Builders<T>.Filter.Eq("Id", id);
-            await _collection.DeleteOneAsync(filter);
+            await _collection.DeleteOneAsync(e => e.Id == id);
         }
 
-        public Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter)
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter)
         {
-            throw new NotImplementedException();
+            return await _collection.Find(filter).ToListAsync();
         }
 
-        public Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IEnumerable<T>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            return await _collection.Find(Builders<T>.Filter.Empty).ToListAsync();
         }
 
         public async Task<T> GetByIdAsync(Guid id)
         {
-            var filter = Builders<T>.Filter.Eq("Id", id); // Assuming the entity has "Id" field
-            return await _collection.Find(filter).FirstOrDefaultAsync();
+            return await _collection.Find(e => e.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task< bool> Exist(Guid id)
+        public async Task<bool> Exist(Guid id)
         {
-         return await _collection.Find(x => x.Id == id).AnyAsync();
+            return await _collection.Find(x => x.Id == id).AnyAsync();
         }
 
-        public Task UpdateAsync(Guid id, T action)
+        public async Task UpdateAsync(Guid id, T action)
         {
-            throw new NotImplementedException();
+            await _collection.ReplaceOneAsync(e => e.Id == id, action);
+        }
+
+        public async Task CreateListAsync(IEnumerable<T> action)
+        {
+            await _collection.InsertManyAsync(action);
+        }
+
+        public async Task UpdateListAsync(IEnumerable<T> actions)
+        {
+            await _collection.UpdateManyAsync(Builders<T>.Filter.In(e => e.Id, actions.Select(a => a.Id)), Builders<T>.Update.Set(e => e, actions.First()));
+        }
+
+        public Task DeleteListAsync(IEnumerable<Guid> ids)
+        {
+            var filter = Builders<T>.Filter.In(e => e.Id, ids);
+            return _collection.DeleteManyAsync(filter);
         }
     }
 }

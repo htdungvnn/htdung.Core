@@ -10,23 +10,16 @@ namespace htdung.DataAccess.MongoRepository
 {
     public interface IMongoRepository<T> where T : class
     {
-        // Insert a new entity
         Task CreateAsync(T action);
-
-        // Get an entity by its ID
         Task<T> GetByIdAsync(Guid id);
-
-        // Get all entities
         Task<IEnumerable<T>> GetAllAsync();
-
-        // Update an entity
         Task UpdateAsync(Guid id, T action);
-
-        // Delete an entity by its ID
         Task DeleteAsync(Guid id);
-
-        // Find entities using a filter expression
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter);
+        Task CreateListAsync(IEnumerable<T> actions);
+        Task UpdateListAsync(IEnumerable<T> actions);
+        Task DeleteListAsync(IEnumerable<Guid> ids);
+
 
     }
 }
