@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace htdung.DataAccess.Data
 {
-    public class MongoDbContext
+    public abstract class MongoDbContext
     {
         private readonly IMongoDatabase _database;
 
-        public MongoDbContext(string connectionString, string databaseName)
+        protected MongoDbContext(string connectionString, string databaseName)
         {
             // Initialize the Mongo client and database
             var client = new MongoClient(connectionString);

@@ -11,15 +11,10 @@ using System.Threading.Tasks;
 
 namespace htdung.DataAccess.MongoRepository
 {
-    public class MongoRepository<T> : IMongoRepository<T>
+    public class MongoRepository<T>(MongoDbContext context, string collectionName) : IMongoRepository<T>
         where T : BaseActionLog<BaseEntity>
     {
-        private readonly IMongoCollection<T> _collection;
-
-        public MongoRepository(MongoDbContext context, string collectionName)
-        {
-            _collection = context.GetCollection<T>(collectionName);
-        }
+        private readonly IMongoCollection<T> _collection = context.GetCollection<T>(collectionName);
 
         public async Task CreateAsync(T action)
         {
@@ -63,7 +58,8 @@ namespace htdung.DataAccess.MongoRepository
 
         public async Task UpdateListAsync(IEnumerable<T> actions)
         {
-            await _collection.UpdateManyAsync(Builders<T>.Filter.In(e => e.Id, actions.Select(a => a.Id)), Builders<T>.Update.Set(e => e, actions.First()));
+            var baseActionLogs = actions as T[] ?? actions.ToArray();
+            await _collection.UpdateManyAsync(Builders<T>.Filter.In(e => e.Id, baseActionLogs.Select(a => a.Id)), Builders<T>.Update.Set(e => e, baseActionLogs.First()));
         }
 
         public Task DeleteListAsync(IEnumerable<Guid> ids)

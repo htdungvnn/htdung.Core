@@ -6,25 +6,21 @@ using System.Linq.Expressions;
 
 namespace htdung.DataAccess.EFRepository
 {
-    public class EFRepository<T> : IGenericRepository<T> where T : BaseEntity
+    public class EfRepository<T> : IEfRepository<T> where T : BaseEntity
     {
         private readonly ApplicationDbContext _context;
         private readonly DbSet<T> _dbSet;
 
-        public EFRepository(ApplicationDbContext dbCotext)
+        public EfRepository(ApplicationDbContext dbContext)
         {
-            _context = dbCotext;
+            _context = dbContext;
             _dbSet = _context.Set<T>();
         }
 
         public async Task AddAsync(T entity)
         {
-            var exist = await Exist(entity.Id);
-            if (!exist)
-            {
-                await _dbSet.AddAsync(entity);
-                await _context.SaveChangesAsync();
-            }
+            await _dbSet.AddAsync(entity);
+            await _context.SaveChangesAsync();
         }
 
         public async Task AddListAsync(IEnumerable<T> entities)
@@ -35,17 +31,13 @@ namespace htdung.DataAccess.EFRepository
 
         public async Task DeleteAsync(Guid id)
         {
-
             var entity = await _dbSet.FindAsync(id);
             if (entity != null)
             {
                 _dbSet.Remove(entity);
                 await _context.SaveChangesAsync();
             }
-
         }
-
-
 
         public async Task DeleteListAsync(IEnumerable<Guid> ids)
         {
@@ -79,47 +71,32 @@ namespace htdung.DataAccess.EFRepository
 
         public async Task<PaginatedResult<T>> GetPagedAsync(PaginatedFilter<T> paginatedFilter)
         {
-            // Start with the queryable
             var query = _context.GetDbSet<T>().AsQueryable();
 
-            // Apply filter if provided
             if (paginatedFilter.Filter != null)
             {
                 query = query.Where(paginatedFilter.Filter);
             }
 
-            // Calculate the total count of records (filtered or unfiltered)
             var totalCount = await query.CountAsync();
-
-            // Fetch the paginated data
             var data = await query
-                .Skip((paginatedFilter.PageNumber - 1) * paginatedFilter.PageSize)  // Skip items for the current page
-                .Take(paginatedFilter.PageSize)                     // Take only the number of items for the current page
+                .Skip((paginatedFilter.PageNumber - 1) * paginatedFilter.PageSize)
+                .Take(paginatedFilter.PageSize)
                 .ToListAsync();
 
-            // Return the paginated result
             return new PaginatedResult<T>(data, paginatedFilter.PageNumber, paginatedFilter.PageSize, totalCount);
         }
 
-
         public async Task UpdateAsync(T model)
         {
-            var entity = await _dbSet.FindAsync(model.Id);
-            if (entity != null)
-            {
-                _dbSet.Update(model);
-                await _context.SaveChangesAsync();
-            }
+            _dbSet.Update(model);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateListAsync(IEnumerable<T> models)
         {
-            var entities = await _dbSet.Where(e => models.Select(m => m.Id).Contains(e.Id)).ToListAsync();
-            if (entities.Any())
-            {
-                _dbSet.UpdateRange(models);
-                await _context.SaveChangesAsync();
-            }
+            _dbSet.UpdateRange(models);
+            await _context.SaveChangesAsync();
         }
     }
 }

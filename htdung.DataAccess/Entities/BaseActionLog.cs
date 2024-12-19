@@ -8,29 +8,22 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace htdung.DataAccess.Entities
 {
-    public class BaseActionLog<T> where T : BaseEntity
+    public class BaseActionLog<T>(T entity, ActionType actionType, Guid userHandle)
+        where T : BaseEntity
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public Guid Id { get; set; }
-        public BaseActionLog(T entity, ActionType actionType, Guid userHandle)
-        {
-            Entity = entity;
-            ActionType = actionType;
-            UserHandle = userHandle;
-            Id = entity.Id;
-        }
+        public Guid Id { get; set; } = entity.Id;
 
-        public ActionType ActionType { get; set; }
-        public T Entity { get; set; }
-        public Guid UserHandle { get; set; }
+        public ActionType ActionType { get; set; } = actionType;
+        public T Entity { get; set; } = entity;
+        public Guid UserHandle { get; set; } = userHandle;
         public DateTime ActionDate { get; set; } = DateTime.UtcNow;
     }
 
     public enum ActionType
     {
         Create,
-        Update,
-        Delete
+        Update
     }
 }
